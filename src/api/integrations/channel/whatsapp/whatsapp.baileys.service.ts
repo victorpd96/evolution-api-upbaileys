@@ -1610,7 +1610,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
           const message: any = {
             keyId: key.id,
-            remoteJid: key?.remoteJid,
+            remoteJid: key?.remoteJid ?? (key as any)?.remoteJidAlt,
             fromMe: key.fromMe,
             participant: key?.participant,
             status: status[update.status] ?? 'SERVER_ACK',
@@ -1648,12 +1648,18 @@ export class BaileysStartupService extends ChannelStartupService {
               continue;
             }
             message.messageId = findMessage.id;
+
+            // baileys 7.x (LID): a key do update pode vir sem remoteJid; usa o da mensagem original
+            if (!message.remoteJid) {
+              const foundKey = typeof findMessage.key === 'string' ? JSON.parse(findMessage.key) : findMessage.key;
+              message.remoteJid = foundKey?.remoteJid ?? foundKey?.remoteJidAlt;
+            }
           }
 
           if (update.message === null && update.status === undefined) {
             this.sendDataWebhook(Events.MESSAGES_DELETE, { ...key, status: 'DELETED' });
 
-            if (this.configService.get<Database>('DATABASE').SAVE_DATA.MESSAGE_UPDATE)
+            if (this.configService.get<Database>('DATABASE').SAVE_DATA.MESSAGE_UPDATE && message.remoteJid)
               await this.prismaRepository.messageUpdate.create({ data: message });
 
             if (this.configService.get<Chatwoot>('CHATWOOT').ENABLED && this.localChatwoot?.enabled) {
@@ -1699,7 +1705,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
           this.sendDataWebhook(Events.MESSAGES_UPDATE, message);
 
-          if (this.configService.get<Database>('DATABASE').SAVE_DATA.MESSAGE_UPDATE) {
+          if (this.configService.get<Database>('DATABASE').SAVE_DATA.MESSAGE_UPDATE && message.remoteJid) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { message: _msg, ...messageData } = message;
             await this.prismaRepository.messageUpdate.create({ data: messageData });
