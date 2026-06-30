@@ -1478,7 +1478,6 @@ export class BaileysStartupService extends ChannelStartupService {
           if (messageRaw.key.remoteJid?.includes('@lid') && messageRaw.key.remoteJidAlt) {
             messageRaw.key.remoteJid = messageRaw.key.remoteJidAlt;
           }
-          console.log(messageRaw);
 
           this.sendDataWebhook(Events.MESSAGES_UPSERT, messageRaw);
 
@@ -1570,7 +1569,6 @@ export class BaileysStartupService extends ChannelStartupService {
         const cached = await this.baileysCache.get(updateKey);
 
         const secondsSinceEpoch = Math.floor(Date.now() / 1000);
-        console.log('CACHE:', { cached, updateKey, messageTimestamp: update.messageTimestamp, secondsSinceEpoch });
 
         if (
           (update.messageTimestamp && update.messageTimestamp === cached) ||
